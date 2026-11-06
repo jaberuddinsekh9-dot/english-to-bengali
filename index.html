@@ -1,313 +1,589 @@
+```html
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>English Bengali Reading Assistant</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Roboto, sans-serif;
-    }
-    body {
-      background-color: #f4f6f9;
-      color: #333;
-      padding-top: 135px; /* Top Card offset */
-      padding-bottom: 30px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইংরেজি পাঠ সহায়িকা - English-to-Bengali Smart Reader</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Hind Siliguri for Bengali & Inter for English) -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tesseract.js for OCR Image Text Recognition -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
-    /* Top Fixed Sticky Card */
-    .top-sticky-card {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      background: #ffffff;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
-      border-bottom: 4px solid #1a73e8;
-      padding: 12px 18px;
-      display: none;
-      animation: slideDown 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
-    }
-    @keyframes slideDown {
-      from { transform: translateY(-100%); }
-      to { transform: translateY(0); }
-    }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .word-area {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .selected-word {
-      font-size: 22px;
-      font-weight: bold;
-      color: #1a73e8;
-      text-transform: capitalize;
-    }
-    .audio-btn {
-      background: #e8f0fe;
-      border: none;
-      color: #1a73e8;
-      border-radius: 50%;
-      width: 38px;
-      height: 38px;
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .audio-btn:active {
-      background: #c2e7ff;
-    }
-    .close-btn {
-      background: #fce8e6;
-      color: #d93025;
-      border: none;
-      border-radius: 50%;
-      width: 34px;
-      height: 34px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .card-details {
-      display: flex;
-      gap: 15px;
-      font-size: 16px;
-      background: #f8f9fa;
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid #e0e0e0;
-    }
-    .pron-box {
-      color: #d93025;
-      font-weight: 600;
-    }
-    .mean-box {
-      color: #1e8e3e;
-      font-weight: 600;
-      border-left: 2px solid #ccc;
-      padding-left: 14px;
-    }
-
-    /* Main Container */
-    .container {
-      max-width: 650px;
-      margin: 0 auto;
-      padding: 0 15px;
-    }
-    .app-title {
-      text-align: center;
-      color: #1a73e8;
-      margin-bottom: 15px;
-      font-size: 22px;
-    }
-    .input-section {
-      background: #ffffff;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    textarea {
-      width: 100%;
-      height: 80px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 15px;
-      resize: vertical;
-    }
-    .btn-row {
-      display: flex;
-      gap: 10px;
-    }
-    .btn {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: #1a73e8;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .btn-upload {
-      background: #34a853;
-    }
-
-    /* Reading Display Area */
-    .reading-box {
-      background: #ffffff;
-      padding: 22px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      font-size: 20px;
-      line-height: 2.2;
-      color: #202124;
-      min-height: 320px;
-    }
-    .clickable-word {
-      cursor: pointer;
-      padding: 2px 5px;
-      border-radius: 4px;
-      transition: all 0.15s;
-      display: inline-block;
-    }
-    .clickable-word:hover, .clickable-word:active {
-      background-color: #c2e7ff;
-      color: #0b57d0;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Top Fixed Floating Card -->
-  <div class="top-sticky-card" id="topCard">
-    <div class="card-header">
-      <div class="word-area">
-        <span class="selected-word" id="cardWord">Word</span>
-        <button class="audio-btn" onclick="playAudio()" title="উচ্চারণ শুনুন">🔊</button>
-      </div>
-      <button class="close-btn" onclick="closeTopCard()">✕</button>
-    </div>
-    <div class="card-details">
-      <div class="pron-box">উচ্চারণ: <span id="cardPron"></span></div>
-      <div class="mean-box">অর্থ: <span id="cardMean"></span></div>
-    </div>
-  </div>
-
-  <div class="container">
-    <h2 class="app-title">📖 English Bengali Reader</h2>
-
-    <!-- Text paste & image loading controls -->
-    <div class="input-section">
-      <textarea id="customTextInput" placeholder="এখানে কোনো ইংরেজি লেখা পেস্ট করুন..."></textarea>
-      <div class="btn-row">
-        <button class="btn" onclick="loadCustomText()">পড়া শুরু করুন</button>
-        <button class="btn btn-upload" onclick="document.getElementById('imageInput').click()">📷 ছবি আপলোড</button>
-        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
-      </div>
-    </div>
-
-    <!-- Reading Display Screen -->
-    <div class="reading-box" id="readingArea"></div>
-  </div>
-
-  <script>
-    // Dictionary with accurate Bengali pronunciation & most common primary meaning
-    const dictionary = {
-      "put": { pron: "পুট", mean: "রাখা" },
-      "dog": { pron: "ডগ", mean: "কুকুর" },
-      "cat": { pron: "ক্যাট", mean: "বিড়াল" },
-      "book": { pron: "বুক", mean: "বই" },
-      "look": { pron: "লুক", mean: "তাকানো / দেখা" },
-      "run": { pron: "রান", mean: "দৌড়ানো" },
-      "read": { pron: "রিড", mean: "পড়া" },
-      "water": { pron: "ওয়াটার", mean: "জল" },
-      "go": { pron: "গো", mean: "যাওয়া" },
-      "eat": { pron: "ইট", mean: "খাওয়া" },
-      "school": { pron: "স্কুল", mean: "বিদ্যালয়" },
-      "friend": { pron: "ফ্রেন্ড", mean: "বন্ধু" },
-      "pen": { pron: "পেন", mean: "কলম" },
-      "tree": { pron: "ট্রি", mean: "গাছ" },
-      "sun": { pron: "সান", mean: "সূর্য" },
-      "man": { pron: "ম্যান", mean: "মানুষ" },
-      "boy": { pron: "বয়", mean: "ছেলে" },
-      "girl": { pron: "গার্ল", mean: "মেয়ে" },
-      "good": { pron: "গুড", mean: "ভালো" },
-      "bad": { pron: "ব্যাড", mean: "খারাপ" },
-      "apple": { pron: "অ্যাপেল", mean: "আপেল" },
-      "table": { pron: "টেবিল", mean: "টেবিল" },
-      "chair": { pron: "চেয়ার", mean: "চেয়ার" },
-      "under": { pron: "আন্ডার", mean: "নিচে" }
-    };
-
-    let activeEnglishWord = "";
-    const defaultText = "The boy is reading a book. Put the pen on the table. A dog is running under the tree. Look at the sun.";
-
-    // Render interactive words
-    function renderText(text) {
-      const area = document.getElementById('readingArea');
-      const tokens = text.split(/(\s+)/);
-      
-      area.innerHTML = tokens.map(token => {
-        const cleanWord = token.replace(/[^a-zA-Z]/g, '');
-        if (cleanWord.length > 0) {
-          return `<span class="clickable-word" onclick="onWordTap('${cleanWord}')">${token}</span>`;
+    <style>
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            background-color: #f8fafc;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        return token;
-      }).join('');
-    }
+        .reader-text {
+            font-family: 'Inter', sans-serif;
+            line-height: 2.2;
+        }
+        .word-span {
+            display: inline-block;
+            padding: 3px 6px;
+            margin: 1px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            font-weight: 500;
+        }
+        .word-span:hover {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+        }
+        .word-span.active {
+            background-color: #2563eb;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+            transform: scale(1.06);
+        }
+        .top-translation-card {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideDown {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between">
 
-    // Word Tap Action
-    function onWordTap(word) {
-      const lower = word.toLowerCase();
-      activeEnglishWord = lower;
+    <!-- Top Sticky Translation Display Header (ALWAYS Pinned at Very Top) -->
+    <div id="topTranslationHeader" class="hidden sticky top-0 z-50 w-full px-2 sm:px-4 py-2 bg-slate-900/90 backdrop-blur-md">
+        <div class="max-w-3xl mx-auto bg-white rounded-2xl p-3 sm:p-4 top-translation-card border-2 border-blue-500 relative">
+            
+            <!-- Close (✕) Button -->
+            <button id="closeHeaderBtn" class="absolute top-2.5 right-2.5 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 w-8 h-8 rounded-full flex items-center justify-center transition active:scale-90 border border-slate-200" title="বন্ধ করুন">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
 
-      document.getElementById('cardWord').innerText = word;
+            <div class="flex items-center justify-between pr-8 border-b border-slate-100 pb-2">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 text-[11px] font-bold uppercase bg-blue-100 text-blue-700 rounded-md">নির্বাচিত শব্দ</span>
+                    <h2 id="englishWordDisplay" class="text-xl sm:text-2xl font-extrabold text-slate-900 font-sans tracking-wide">Dog</h2>
+                </div>
 
-      if (dictionary[lower]) {
-        document.getElementById('cardPron').innerText = dictionary[lower].pron;
-        document.getElementById('cardMean').innerText = dictionary[lower].mean;
-      } else {
-        document.getElementById('cardPron').innerText = word;
-        document.getElementById('cardMean').innerText = "অর্থ খোঁজা হচ্ছে...";
-      }
+                <!-- Pure English Audio Pronunciation Button -->
+                <button id="speakAudioBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-md active:scale-95 transition" title="শুধুমাত্র ইংরেজি উচ্চারণ শুনুন">
+                    <i class="fa-solid fa-volume-high text-sm"></i>
+                    <span class="text-xs font-semibold">উচ্চারণ</span>
+                </button>
+            </div>
 
-      document.getElementById('topCard').style.display = 'block';
-    }
+            <!-- Meaning & Bengali Pronunciation Grid -->
+            <div class="grid grid-cols-2 gap-2 sm:gap-4 mt-2">
+                <!-- Accurate Bengali Pronunciation -->
+                <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-2.5">
+                    <span class="text-[11px] text-amber-700 font-bold block">বাংলা উচ্চারণ:</span>
+                    <p id="bengaliPhoneticDisplay" class="text-base sm:text-lg font-bold text-amber-950 mt-0.5">ডগ</p>
+                </div>
 
-    // Audio Playback (Strictly English Only)
-    function playAudio() {
-      if (!activeEnglishWord) return;
-      window.speechSynthesis.cancel();
-      const speech = new SpeechSynthesisUtterance(activeEnglishWord);
-      speech.lang = 'en-US';
-      speech.rate = 0.9;
-      window.speechSynthesis.speak(speech);
-    }
+                <!-- Accurate Bengali Meaning -->
+                <div class="bg-emerald-50 border border-emerald-200/80 rounded-xl p-2.5">
+                    <span class="text-[11px] text-emerald-700 font-bold block">বাংলা অর্থ:</span>
+                    <p id="bengaliMeaningDisplay" class="text-base sm:text-lg font-bold text-emerald-950 mt-0.5">কুকুর</p>
+                </div>
+            </div>
 
-    // Close Top Card
-    function closeTopCard() {
-      document.getElementById('topCard').style.display = 'none';
-    }
+        </div>
+    </div>
 
-    // Custom Text Loader
-    function loadCustomText() {
-      const text = document.getElementById('customTextInput').value;
-      if (text.trim()) {
-        renderText(text);
-      }
-    }
+    <!-- Main Navigation Bar -->
+    <header class="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-md z-30">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="bg-white/20 p-2.5 rounded-2xl backdrop-blur-md border border-white/20">
+                    <i class="fa-solid fa-book-open text-xl text-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-bold leading-none tracking-tight">ইংরেজি পাঠ সহায়িকা</h1>
+                    <p class="text-xs text-blue-100 mt-1">যেকোনো শব্দে ট্যাপ করুন</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- App Save/Download Button -->
+                <button id="downloadAppBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm px-3 py-1.5 rounded-xl border border-emerald-400/50 shadow-sm transition flex items-center gap-1.5 font-bold active:scale-95" title="অ্যাপটি ফাইলে সেভ বা ডাউনলোড করুন">
+                    <i class="fa-solid fa-download"></i>
+                    <span class="hidden sm:inline">অ্যাপ</span> ডাউনলোড
+                </button>
+                
+                <button id="demoTextBtn" class="bg-white/20 hover:bg-white/30 text-xs sm:text-sm px-3 py-1.5 rounded-xl border border-white/30 transition flex items-center gap-1 font-medium active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles text-yellow-300"></i> গল্প
+                </button>
+            </div>
+        </div>
+    </header>
 
-    // Image Upload Demo Handler
-    function handleImageUpload(e) {
-      if (e.target.files && e.target.files[0]) {
-        renderText("Image text loaded! Put the pen on the table and look at the dog under the tree.");
-      }
-    }
+    <!-- Main Application Container -->
+    <main class="max-w-3xl w-full mx-auto px-3 py-4 flex-1 flex flex-col gap-4">
 
-    window.onload = function() {
-      renderText(defaultText);
-    };
-  </script>
+        <!-- Controls Bar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 flex flex-wrap gap-2 items-center justify-between">
+            <div class="flex items-center gap-2">
+                <label class="cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-camera text-base"></i>
+                    <span>পড়ার পাতার ছবি</span>
+                    <input type="file" id="imageInput" accept="image/*" class="hidden">
+                </label>
+                <button id="toggleInputBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+                    <span>লেখা পেস্ট করুন</span>
+                </button>
+            </div>
+
+            <!-- Font Size Controls -->
+            <div class="flex items-center bg-slate-100 rounded-xl p-1 gap-1 text-xs">
+                <span class="text-slate-500 font-semibold px-1">সাইজ:</span>
+                <button id="zoomOutBtn" class="w-7 h-7 bg-white rounded-lg shadow-sm font-bold text-slate-700 flex items-center justify-center hover:bg-slate-50 active:scale-90">-</button>
+                <button id="zoomInBtn" class="w-7 h-7 bg-white rounded-lg shadow-sm font-bold text-slate-700 flex items-center justify-center hover:bg-slate-50 active:scale-90">+</button>
+            </div>
+        </div>
+
+        <!-- OCR Scanning Loader -->
+        <div id="ocrProgressCard" class="hidden bg-slate-900 text-white p-4 rounded-2xl shadow-xl flex flex-col gap-2 border border-slate-700">
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+                <span id="ocrStatusText" class="font-medium text-blue-300">ছবি থেকে লেখা রূপান্তর করা হচ্ছে...</span>
+                <span id="ocrPercent" class="font-bold text-yellow-400">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+                <div id="ocrProgressBar" class="bg-gradient-to-r from-blue-500 to-indigo-400 h-full w-0 transition-all duration-200"></div>
+            </div>
+        </div>
+
+        <!-- Manual Text Input Box -->
+        <div id="textInputSection" class="hidden bg-white p-4 rounded-2xl border border-blue-200 shadow-md flex flex-col gap-3">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                <label class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-paste text-indigo-500"></i> ইংরেজি টেক্সট টাইপ বা পেস্ট করুন:
+                </label>
+                <button id="closeInputBtn" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <textarea id="manualTextArea" rows="4" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800 font-sans text-sm" placeholder="ইংরেজি পড়া টাইপ করুন..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button id="cancelInputBtn" class="px-4 py-2 rounded-xl text-xs sm:text-sm text-slate-600 hover:bg-slate-100 font-medium">বাতিল</button>
+                <button id="applyTextBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold shadow-sm active:scale-95">পড়া শুরু করুন</button>
+            </div>
+        </div>
+
+        <!-- Image Upload Thumbnail -->
+        <div id="uploadedImagePreview" class="hidden p-2.5 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center gap-3">
+            <img id="thumbImg" class="w-12 h-12 object-cover rounded-xl border border-slate-200" src="" alt="Thumbnail">
+            <div class="text-xs text-slate-600 flex-1">
+                <p class="font-bold text-slate-800">বইয়ের ছবি লোড হয়েছে</p>
+                <p id="thumbName" class="truncate text-slate-400 max-w-[200px]">image.jpg</p>
+            </div>
+            <button id="removeImageBtn" class="text-slate-400 hover:text-red-500 p-2"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+
+        <!-- Interactive Reading Area -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-7 flex-1 min-h-[450px] relative">
+            <div class="flex justify-between items-center pb-3 mb-4 border-b border-slate-100 text-xs text-slate-400">
+                <span class="font-semibold tracking-wide uppercase flex items-center gap-1.5 text-slate-600">
+                    <i class="fa-solid fa-book-bookmark text-blue-600"></i> পড়ার পাতা
+                </span>
+                <span class="text-slate-400">যেকোনো শব্দে ক্লিক করুন</span>
+            </div>
+
+            <!-- Clickable Rendered Text -->
+            <div id="readerContent" class="reader-text text-lg sm:text-xl text-slate-800 selection:bg-blue-100">
+                <!-- Generated Spans -->
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500 mt-6">
+        <p class="font-medium text-slate-600">ইংরেজি বই পাঠ সহায়িকা • প্লে-স্টোর স্টাইল এডুকেশনাল অ্যাপ</p>
+    </footer>
+
+    <!-- App Logic Script -->
+    <script>
+        const DEFAULT_TEXT = `The quick brown fox jumps over the lazy dog. A faithful dog brings immense joy to the family. Reading books every single day opens up new doors of knowledge and true wisdom. Photography is the art of capturing beautiful moments. School students love their teacher.`;
+
+        // Accurate Standard Bengali Dictionary with Primary Everyday Meanings & Phonetics
+        const PRIMARY_DICTIONARY = {
+            "the": { pron: "দ্য", mean: "টি / টা" },
+            "quick": { pron: "কুইক", mean: "দ্রুত" },
+            "brown": { pron: "ব্রাউন", mean: "বাদামী" },
+            "fox": { pron: "ফক্স", mean: "শেয়াল" },
+            "jumps": { pron: "জাম্পস", mean: "লাফায়" },
+            "over": { pron: "ওভার", mean: "উপরে" },
+            "lazy": { pron: "লেজি", mean: "অলস" },
+            "dog": { pron: "ডগ", mean: "কুকুর" },
+            "cat": { pron: "ক্যাট", mean: "বিড়াল" },
+            "a": { pron: "এ", mean: "একটি" },
+            "faithful": { pron: "ফেইথফুল", mean: "বিশ্বস্ত" },
+            "brings": { pron: "ব্রিংস", mean: "আনে" },
+            "immense": { pron: "ইমেন্স", mean: "প্রচুর" },
+            "joy": { pron: "জয়", mean: "আনন্দ" },
+            "to": { pron: "টু", mean: "দিকে" },
+            "family": { pron: "ফ্যামিলি", mean: "পরিবার" },
+            "reading": { pron: "রিডিং", mean: "পড়া" },
+            "read": { pron: "রীড", mean: "পড়া" },
+            "books": { pron: "বুকস", mean: "বইগুলো" },
+            "book": { pron: "বুক", mean: "বই" },
+            "every": { pron: "এভরি", mean: "প্রতিটি" },
+            "single": { pron: "সিঙ্গেল", mean: "একক" },
+            "day": { pron: "ডে", mean: "দিন" },
+            "opens": { pron: "ওপেনস", mean: "খোলে" },
+            "up": { pron: "আপ", mean: "উপরে" },
+            "new": { pron: "নিউ", mean: "নতুন" },
+            "doors": { pron: "ডোরস", mean: "দরজাগুলো" },
+            "of": { pron: "অফ", mean: "এর" },
+            "knowledge": { pron: "নলেজ", mean: "জ্ঞান" },
+            "and": { pron: "অ্যান্ড", mean: "এবং" },
+            "true": { pron: "ট্রু", mean: "সত্যি" },
+            "wisdom": { pron: "উইজডম", mean: "বুদ্ধি" },
+            "photography": { pron: "ফটোগ্রাফি", mean: "ছবি তোলা" },
+            "is": { pron: "ইজ", mean: "হয়" },
+            "art": { pron: "আর্ট", mean: "শিল্প" },
+            "capturing": { pron: "ক্যাপচারিং", mean: "ধরে রাখা" },
+            "beautiful": { pron: "বিউটিফুল", mean: "সুন্দর" },
+            "moments": { pron: "মোমেন্টস", mean: "মুহূর্তগুলো" },
+            "school": { pron: "স্কুল", mean: "বিদ্যালয় / স্কুল" },
+            "students": { pron: "স্টুডেন্টস", mean: "ছাত্রছাত্রীরা" },
+            "student": { pron: "স্টুডেন্ট", mean: "ছাত্র / ছাত্রী" },
+            "love": { pron: "লাভ", mean: "ভালোবাসা" },
+            "their": { pron: "দেয়ার", mean: "তাদের" },
+            "teacher": { pron: "টিচার", mean: "শিক্ষক" },
+            "friend": { pron: "ফ্রেন্ড", mean: "বন্ধু" },
+            "computer": { pron: "কম্পিউটার", mean: "কম্পিউটার" },
+            "elephant": { pron: "এলিফ্যান্ট", mean: "হাতি" },
+            "apple": { pron: "অ্যাপল", mean: "আপেল" },
+            "water": { pron: "ওয়াটার", mean: "জল / পানি" },
+            "father": { pron: "ফাদার", mean: "বাবা" },
+            "mother": { pron: "মাদার", mean: "মা" },
+            "brother": { pron: "ব্রাদার", mean: "ভাই" },
+            "sister": { pron: "সিস্টার", mean: "বোন" }
+        };
+
+        let currentText = DEFAULT_TEXT;
+        let selectedWord = "";
+        let fontSize = 20;
+
+        // Elements
+        const readerContent = document.getElementById('readerContent');
+        const topTranslationHeader = document.getElementById('topTranslationHeader');
+        const closeHeaderBtn = document.getElementById('closeHeaderBtn');
+        const englishWordDisplay = document.getElementById('englishWordDisplay');
+        const bengaliPhoneticDisplay = document.getElementById('bengaliPhoneticDisplay');
+        const bengaliMeaningDisplay = document.getElementById('bengaliMeaningDisplay');
+        const speakAudioBtn = document.getElementById('speakAudioBtn');
+        const imageInput = document.getElementById('imageInput');
+        const ocrProgressCard = document.getElementById('ocrProgressCard');
+        const ocrStatusText = document.getElementById('ocrStatusText');
+        const ocrPercent = document.getElementById('ocrPercent');
+        const ocrProgressBar = document.getElementById('ocrProgressBar');
+        const toggleInputBtn = document.getElementById('toggleInputBtn');
+        const textInputSection = document.getElementById('textInputSection');
+        const closeInputBtn = document.getElementById('closeInputBtn');
+        const manualTextArea = document.getElementById('manualTextArea');
+        const applyTextBtn = document.getElementById('applyTextBtn');
+        const cancelInputBtn = document.getElementById('cancelInputBtn');
+        const demoTextBtn = document.getElementById('demoTextBtn');
+        const downloadAppBtn = document.getElementById('downloadAppBtn');
+        const uploadedImagePreview = document.getElementById('uploadedImagePreview');
+        const thumbImg = document.getElementById('thumbImg');
+        const thumbName = document.getElementById('thumbName');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+
+        // Render English text as clickable interactive tokens
+        function renderInteractiveText(text) {
+            readerContent.innerHTML = '';
+            const paragraphs = text.split('\n');
+
+            paragraphs.forEach(paragraphStr => {
+                if (!paragraphStr.trim()) return;
+                
+                const pElem = document.createElement('p');
+                pElem.className = "mb-4";
+
+                const tokens = paragraphStr.split(/(\s+|[.,!?;:()"])/);
+
+                tokens.forEach(token => {
+                    if (/^[a-zA-Z0-9'-]+$/.test(token)) {
+                        const span = document.createElement('span');
+                        span.className = 'word-span';
+                        span.textContent = token;
+
+                        span.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            highlightWord(span);
+                            lookupAndShowWord(token);
+                        });
+
+                        pElem.appendChild(span);
+                    } else {
+                        const textNode = document.createTextNode(token);
+                        pElem.appendChild(textNode);
+                    }
+                });
+
+                readerContent.appendChild(pElem);
+            });
+        }
+
+        function highlightWord(selectedSpan) {
+            document.querySelectorAll('.word-span').forEach(el => el.classList.remove('active'));
+            selectedSpan.classList.add('active');
+        }
+
+        // Accurate Bengali Sound Transliteration Algorithm
+        function getAccurateBengaliPhonetic(word) {
+            let clean = word.toLowerCase().trim();
+            
+            // High-precision custom map for words
+            const wordMap = {
+                "knowledge": "নলেজ",
+                "photography": "ফটোগ্রাফি",
+                "elephant": "এলিফ্যান্ট",
+                "sentence": "সেন্টেন্স",
+                "language": "ল্যাঙ্গুয়েজ",
+                "schedule": "শিডিউল",
+                "education": "এডুকেশন",
+                "future": "ফিউচার",
+                "nature": "নেচার",
+                "picture": "পিকচার",
+                "school": "স্কুল",
+                "student": "স্টুডেন্ট",
+                "students": "স্টুডেন্টস",
+                "teacher": "টিচার",
+                "computer": "কম্পিউটার",
+                "beautiful": "বিউটিফুল",
+                "capturing": "ক্যাপচারিং",
+                "moments": "মোমেন্টস",
+                "faithful": "ফেইথফুল",
+                "immense": "ইমেন্স",
+                "wisdom": "উইজডম",
+                "cat": "ক্যাট",
+                "dog": "ডগ",
+                "apple": "অ্যাপল",
+                "read": "রীড",
+                "reading": "রিডিং"
+            };
+            if (wordMap[clean]) return wordMap[clean];
+
+            // Standard English syllable rules to Bengali phonetics
+            const patterns = [
+                { en: 'tion', bn: 'শন' }, { en: 'sion', bn: 'শন' }, { en: 'ture', bn: 'চার' },
+                { en: 'ing', bn: 'ইং' }, { en: 'ph', bn: 'ফ' }, { en: 'sh', bn: 'শ' },
+                { en: 'ch', bn: 'চ' }, { en: 'th', bn: 'থ' }, { en: 'ck', bn: 'ক' },
+                { en: 'ee', bn: 'ি' }, { en: 'oo', bn: 'ু' }, { en: 'ea', bn: 'ি' },
+                { en: 'ai', bn: 'েই' }, { en: 'ou', bn: 'াউ' }, { en: 'ow', bn: 'াও' },
+                { en: 'a', bn: 'অ' }, { en: 'b', bn: 'ব' }, { en: 'c', bn: 'ক' },
+                { en: 'd', bn: 'ড' }, { en: 'e', bn: 'ে' }, { en: 'f', bn: 'ফ' },
+                { en: 'g', bn: 'গ' }, { en: 'h', bn: 'হ' }, { en: 'i', bn: 'ই' },
+                { en: 'j', bn: 'জ' }, { en: 'k', bn: 'ক' }, { en: 'l', bn: 'ল' },
+                { en: 'm', bn: 'ম' }, { en: 'n', bn: 'ন' }, { en: 'o', bn: 'ও' },
+                { en: 'p', bn: 'প' }, { en: 'q', bn: 'ক' }, { en: 'r', bn: 'র' },
+                { en: 's', bn: 'স' }, { en: 't', bn: 'ট' }, { en: 'u', bn: 'আ' },
+                { en: 'v', bn: 'ভ' }, { en: 'w', bn: 'ওয়' }, { en: 'x', bn: 'ক্স' },
+                { en: 'y', bn: 'ওয়াই' }, { en: 'z', bn: 'জ' }
+            ];
+
+            for (let item of patterns) {
+                clean = clean.replace(new RegExp(item.en, 'g'), item.bn);
+            }
+            return clean;
+        }
+
+        // Show Word Card at Top Fixed Header
+        async function lookupAndShowWord(word) {
+            selectedWord = word;
+            const cleanWord = word.toLowerCase().trim();
+
+            // Display top sticky translation bar
+            topTranslationHeader.classList.remove('hidden');
+
+            englishWordDisplay.textContent = word;
+            bengaliPhoneticDisplay.textContent = getAccurateBengaliPhonetic(word);
+            bengaliMeaningDisplay.textContent = "অর্থ খোঁজা হচ্ছে...";
+
+            // 1. Check Primary Everyday Dictionary
+            if (PRIMARY_DICTIONARY[cleanWord]) {
+                bengaliPhoneticDisplay.textContent = PRIMARY_DICTIONARY[cleanWord].pron;
+                bengaliMeaningDisplay.textContent = PRIMARY_DICTIONARY[cleanWord].mean;
+                return;
+            }
+
+            // 2. Fetch Google Translate API for single primary meaning fallback
+            try {
+                const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=bn&dt=t&q=${encodeURIComponent(word)}`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (data && data[0] && data[0][0]) {
+                    // Split comma-separated extra meanings and pick ONLY the primary single word
+                    let rawMeaning = data[0][0][0] || "";
+                    let primaryMeaning = rawMeaning.split(',')[0].trim();
+                    bengaliMeaningDisplay.textContent = primaryMeaning || rawMeaning;
+                } else {
+                    bengaliMeaningDisplay.textContent = "অর্থ পাওয়া যায়নি";
+                }
+            } catch (err) {
+                bengaliMeaningDisplay.textContent = "অর্থ পাওয়া যায়নি (অফলাইন)";
+            }
+        }
+
+        // CLOSE (✕) BUTTON FUNCTIONALITY
+        closeHeaderBtn.addEventListener('click', () => {
+            topTranslationHeader.classList.add('hidden');
+            document.querySelectorAll('.word-span').forEach(el => el.classList.remove('active'));
+        });
+
+        // PURE ENGLISH AUDIO PRONUNCIATION
+        function speakEnglishWordOnly() {
+            if (!selectedWord) return;
+            
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(selectedWord);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85;
+                utterance.pitch = 1.0;
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("আপনার ডিভাইসে ভয়েস সাপোর্ট পাওয়া যায়নি।");
+            }
+        }
+
+        // DOWNLOAD APP FILE (.HTML)
+        downloadAppBtn.addEventListener('click', () => {
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const tempLink = document.createElement('a');
+            tempLink.href = URL.createObjectURL(blob);
+            tempLink.download = 'English_Bengali_Reader_App.html';
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        });
+
+        // OCR Image scanning with Tesseract.js
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                thumbImg.src = evt.target.result;
+                thumbName.textContent = file.name;
+                uploadedImagePreview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            ocrProgressCard.classList.remove('hidden');
+            ocrProgressBar.style.width = '0%';
+            ocrPercent.textContent = '0%';
+            ocrStatusText.textContent = 'ছবি পড়া শুরু হচ্ছে...';
+
+            try {
+                const worker = await Tesseract.createWorker('eng');
+                
+                const ret = await Tesseract.recognize(file, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            ocrProgressBar.style.width = pct + '%';
+                            ocrPercent.textContent = pct + '%';
+                            ocrStatusText.textContent = 'ছবি থেকে শব্দ পড়া হচ্ছে...';
+                        }
+                    }
+                });
+
+                const extractedText = ret.data.text.trim();
+                if (extractedText.length > 0) {
+                    currentText = extractedText;
+                    renderInteractiveText(currentText);
+                } else {
+                    alert('ছবিতে কোনো স্পষ্ট ইংরেজি লেখা পাওয়া যায়নি।');
+                }
+                
+                await worker.terminate();
+            } catch (error) {
+                console.error(error);
+                alert('ছবি রূপান্তর করতে সমস্যা হয়েছে। অন্য ছবি চেষ্টা করুন।');
+            } finally {
+                ocrProgressCard.classList.add('hidden');
+            }
+        });
+
+        removeImageBtn.addEventListener('click', () => {
+            uploadedImagePreview.classList.add('hidden');
+            imageInput.value = '';
+        });
+
+        speakAudioBtn.addEventListener('click', speakEnglishWordOnly);
+
+        toggleInputBtn.addEventListener('click', () => {
+            textInputSection.classList.toggle('hidden');
+            manualTextArea.value = currentText;
+        });
+
+        closeInputBtn.addEventListener('click', () => textInputSection.classList.add('hidden'));
+        cancelInputBtn.addEventListener('click', () => textInputSection.classList.add('hidden'));
+
+        applyTextBtn.addEventListener('click', () => {
+            const text = manualTextArea.value.trim();
+            if (text) {
+                currentText = text;
+                renderInteractiveText(currentText);
+                uploadedImagePreview.classList.add('hidden');
+            }
+            textInputSection.classList.add('hidden');
+        });
+
+        demoTextBtn.addEventListener('click', () => {
+            currentText = DEFAULT_TEXT;
+            renderInteractiveText(currentText);
+            uploadedImagePreview.classList.add('hidden');
+        });
+
+        // Text Zooming
+        zoomInBtn.addEventListener('click', () => {
+            if (fontSize < 36) {
+                fontSize += 2;
+                readerContent.style.fontSize = fontSize + 'px';
+            }
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            if (fontSize > 14) {
+                fontSize -= 2;
+                readerContent.style.fontSize = fontSize + 'px';
+            }
+        });
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            renderInteractiveText(currentText);
+        });
+    </script>
 </body>
 </html>
+```
+
