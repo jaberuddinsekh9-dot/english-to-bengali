@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Bengali Reading Assistant</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      background-color: #f4f6f9;
+      color: #333;
+      padding-top: 135px; /* Top Card offset */
+      padding-bottom: 30px;
+    }
+
+    /* Top Fixed Sticky Card */
+    .top-sticky-card {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: #ffffff;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+      border-bottom: 4px solid #1a73e8;
+      padding: 12px 18px;
+      display: none;
+      animation: slideDown 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .word-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .selected-word {
+      font-size: 22px;
+      font-weight: bold;
+      color: #1a73e8;
+      text-transform: capitalize;
+    }
+    .audio-btn {
+      background: #e8f0fe;
+      border: none;
+      color: #1a73e8;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .audio-btn:active {
+      background: #c2e7ff;
+    }
+    .close-btn {
+      background: #fce8e6;
+      color: #d93025;
+      border: none;
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-details {
+      display: flex;
+      gap: 15px;
+      font-size: 16px;
+      background: #f8f9fa;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+    .pron-box {
+      color: #d93025;
+      font-weight: 600;
+    }
+    .mean-box {
+      color: #1e8e3e;
+      font-weight: 600;
+      border-left: 2px solid #ccc;
+      padding-left: 14px;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    .app-title {
+      text-align: center;
+      color: #1a73e8;
+      margin-bottom: 15px;
+      font-size: 22px;
+    }
+    .input-section {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      resize: vertical;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #1a73e8;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-upload {
+      background: #34a853;
+    }
+
+    /* Reading Display Area */
+    .reading-box {
+      background: #ffffff;
+      padding: 22px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      font-size: 20px;
+      line-height: 2.2;
+      color: #202124;
+      min-height: 320px;
+    }
+    .clickable-word {
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      display: inline-block;
+    }
+    .clickable-word:hover, .clickable-word:active {
+      background-color: #c2e7ff;
+      color: #0b57d0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Fixed Floating Card -->
+  <div class="top-sticky-card" id="topCard">
+    <div class="card-header">
+      <div class="word-area">
+        <span class="selected-word" id="cardWord">Word</span>
+        <button class="audio-btn" onclick="playAudio()" title="উচ্চারণ শুনুন">🔊</button>
+      </div>
+      <button class="close-btn" onclick="closeTopCard()">✕</button>
+    </div>
+    <div class="card-details">
+      <div class="pron-box">উচ্চারণ: <span id="cardPron"></span></div>
+      <div class="mean-box">অর্থ: <span id="cardMean"></span></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2 class="app-title">📖 English Bengali Reader</h2>
+
+    <!-- Text paste & image loading controls -->
+    <div class="input-section">
+      <textarea id="customTextInput" placeholder="এখানে কোনো ইংরেজি লেখা পেস্ট করুন..."></textarea>
+      <div class="btn-row">
+        <button class="btn" onclick="loadCustomText()">পড়া শুরু করুন</button>
+        <button class="btn btn-upload" onclick="document.getElementById('imageInput').click()">📷 ছবি আপলোড</button>
+        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+      </div>
+    </div>
+
+    <!-- Reading Display Screen -->
+    <div class="reading-box" id="readingArea"></div>
+  </div>
+
+  <script>
+    // Dictionary with accurate Bengali pronunciation & most common primary meaning
+    const dictionary = {
+      "put": { pron: "পুট", mean: "রাখা" },
+      "dog": { pron: "ডগ", mean: "কুকুর" },
+      "cat": { pron: "ক্যাট", mean: "বিড়াল" },
+      "book": { pron: "বুক", mean: "বই" },
+      "look": { pron: "লুক", mean: "তাকানো / দেখা" },
+      "run": { pron: "রান", mean: "দৌড়ানো" },
+      "read": { pron: "রিড", mean: "পড়া" },
+      "water": { pron: "ওয়াটার", mean: "জল" },
+      "go": { pron: "গো", mean: "যাওয়া" },
+      "eat": { pron: "ইট", mean: "খাওয়া" },
+      "school": { pron: "স্কুল", mean: "বিদ্যালয়" },
+      "friend": { pron: "ফ্রেন্ড", mean: "বন্ধু" },
+      "pen": { pron: "পেন", mean: "কলম" },
+      "tree": { pron: "ট্রি", mean: "গাছ" },
+      "sun": { pron: "সান", mean: "সূর্য" },
+      "man": { pron: "ম্যান", mean: "মানুষ" },
+      "boy": { pron: "বয়", mean: "ছেলে" },
+      "girl": { pron: "গার্ল", mean: "মেয়ে" },
+      "good": { pron: "গুড", mean: "ভালো" },
+      "bad": { pron: "ব্যাড", mean: "খারাপ" },
+      "apple": { pron: "অ্যাপেল", mean: "আপেল" },
+      "table": { pron: "টেবিল", mean: "টেবিল" },
+      "chair": { pron: "চেয়ার", mean: "চেয়ার" },
+      "under": { pron: "আন্ডার", mean: "নিচে" }
+    };
+
+    let activeEnglishWord = "";
+    const defaultText = "The boy is reading a book. Put the pen on the table. A dog is running under the tree. Look at the sun.";
+
+    // Render interactive words
+    function renderText(text) {
+      const area = document.getElementById('readingArea');
+      const tokens = text.split(/(\s+)/);
+      
+      area.innerHTML = tokens.map(token => {
+        const cleanWord = token.replace(/[^a-zA-Z]/g, '');
+        if (cleanWord.length > 0) {
+          return `<span class="clickable-word" onclick="onWordTap('${cleanWord}')">${token}</span>`;
+        }
+        return token;
+      }).join('');
+    }
+
+    // Word Tap Action
+    function onWordTap(word) {
+      const lower = word.toLowerCase();
+      activeEnglishWord = lower;
+
+      document.getElementById('cardWord').innerText = word;
+
+      if (dictionary[lower]) {
+        document.getElementById('cardPron').innerText = dictionary[lower].pron;
+        document.getElementById('cardMean').innerText = dictionary[lower].mean;
+      } else {
+        document.getElementById('cardPron').innerText = word;
+        document.getElementById('cardMean').innerText = "অর্থ খোঁজা হচ্ছে...";
+      }
+
+      document.getElementById('topCard').style.display = 'block';
+    }
+
+    // Audio Playback (Strictly English Only)
+    function playAudio() {
+      if (!activeEnglishWord) return;
+      window.speechSynthesis.cancel();
+      const speech = new SpeechSynthesisUtterance(activeEnglishWord);
+      speech.lang = 'en-US';
+      speech.rate = 0.9;
+      window.speechSynthesis.speak(speech);
+    }
+
+    // Close Top Card
+    function closeTopCard() {
+      document.getElementById('topCard').style.display = 'none';
+    }
+
+    // Custom Text Loader
+    function loadCustomText() {
+      const text = document.getElementById('customTextInput').value;
+      if (text.trim()) {
+        renderText(text);
+      }
+    }
+
+    // Image Upload Demo Handler
+    function handleImageUpload(e) {
+      if (e.target.files && e.target.files[0]) {
+        renderText("Image text loaded! Put the pen on the table and look at the dog under the tree.");
+      }
+    }
+
+    window.onload = function() {
+      renderText(defaultText);
+    };
+  </script>
+</body>
+</html>
